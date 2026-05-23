@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0a1f3d"/>
+      <stop offset="100%" stop-color="#050f23"/>
+    </radialGradient>
+    <radialGradient id="orbGrad" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#4a9eff" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#1a3a5c" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#050f23" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4a9eff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#4a9eff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="dotGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#bgGrad)" rx="80"/>
+
+  <!-- Outer glow -->
+  <circle cx="200" cy="165" r="100" fill="url(#orbGlow)"/>
+
+  <!-- Outer ring -->
+  <circle cx="200" cy="165" r="78" fill="none" stroke="#4a9eff" stroke-width="0.5" stroke-opacity="0.2"/>
+
+  <!-- Middle ring -->
+  <circle cx="200" cy="165" r="56" fill="none" stroke="#4a9eff" stroke-width="0.5" stroke-opacity="0.35"/>
+
+  <!-- Main orb -->
+  <circle cx="200" cy="165" r="46" fill="url(#orbGrad)" stroke="#4a9eff" stroke-width="1" stroke-opacity="0.5"/>
+
+  <!-- Inner highlight -->
+  <circle cx="186" cy="151" r="15" fill="#4a9eff" fill-opacity="0.1"/>
+
+  <!-- Center dot -->
+  <circle cx="200" cy="165" r="5" fill="#4a9eff" fill-opacity="0.7" filter="url(#dotGlow)"/>
+
+  <!-- Divider -->
+  <line x1="148" y1="248" x2="252" y2="248" stroke="#4a9eff" stroke-width="0.5" stroke-opacity="0.35"/>
+
+  <!-- AZA wordmark -->
+  <text
+    x="200" y="295"
+    font-family="Georgia, serif"
+    font-size="44"
+    font-weight="300"
+    fill="#ffffff"
+    text-anchor="middle"
+    letter-spacing="16"
+    filter="url(#softGlow)"
+  >aza</text>
+</svg>
