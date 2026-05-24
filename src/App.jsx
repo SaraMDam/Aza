@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 const SECTIONS = {
-  rest:  { en: { label: "Rest & Return",   tagline: "Let the body remember how to rest" }, ar: { label: "الراحة والعودة",  tagline: "دَع الجسد يتذكّر كيف يرتاح" }, icon: "◑", accent: "#4a9eff" },
+  rest:  { en: { label: "Rest & Return",   tagline: "Let the body remember how to rest" }, ar: { label: "الراحة والعودة",  tagline: "دَع الجسد يتذكّر كيف يرتاح" }, icon: "◑", accent: "#60a5fa" },
   focus: { en: { label: "Focus & Clarity", tagline: "A clear mind is a powerful mind"   }, ar: { label: "التركيز والوضوح", tagline: "الذهن الصافي ذهن قوي"        }, icon: "◈", accent: "#60c4ff" },
   heart: { en: { label: "Heart & Healing", tagline: "Return to the warmth within"        }, ar: { label: "القلب والتشافي",  tagline: "عُد إلى الدفء الذي بداخلك"  }, icon: "♡", accent: "#7dd4fc" },
 };
@@ -279,7 +279,7 @@ function TrackRow({ track, isPlaying, onPlay, showAdd, onAdd, inPlaylist, lang }
   const isRTL = lang === "ar";
   return (
     <div onClick={() => onPlay(track)}
-      style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", background: isPlaying ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.02)", border: `1px solid ${isPlaying ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.05)"}`, borderRadius: 14, marginBottom: 8, cursor: "pointer", transition: "all 0.2s" }}
+      style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", background: isPlaying ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.02)", border: `1px solid ${isPlaying ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.09)"}`, borderRadius: 14, marginBottom: 8, cursor: "pointer", transition: "all 0.2s" }}
       onMouseEnter={e => { if (!isPlaying) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
       onMouseLeave={e => { if (!isPlaying) e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
     >
@@ -288,8 +288,8 @@ function TrackRow({ track, isPlaying, onPlay, showAdd, onAdd, inPlaylist, lang }
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontFamily: isRTL ? "'Noto Naskh Arabic', serif" : "'Cormorant Garamond', serif", fontWeight: 400, color: "#fff", marginBottom: 2 }}>{t.title}</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 2 }}>{t.subtitle}</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginBottom: 4, fontStyle: isRTL ? "normal" : "italic" }}>{t.desc}</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 2 }}>{t.subtitle}</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.42)", marginBottom: 4, fontStyle: isRTL ? "normal" : "italic" }}>{t.desc}</div>
         <SectionTags sections={track.sections} lang={lang} />
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0, paddingTop: 2 }}>
@@ -445,7 +445,7 @@ export default function AzaApp() {
         <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.07)", marginBottom: 32, overflowX: "auto" }}>
           {[{id:"home",label:ui.home},{id:"meditate",label:ui.meditate},{id:"music",label:ui.music},{id:"playlists",label:ui.playlists}].map(t => (
             <button key={t.id} onClick={() => { setNav(t.id); setActiveSection(null); }}
-              style={{ background: "none", border: "none", borderBottom: `2px solid ${nav===t.id ? "#4a9eff" : "transparent"}`, color: nav===t.id ? "#fff" : "rgba(255,255,255,0.3)", padding: "12px 14px", fontSize: 12, cursor: "pointer", fontFamily: bodyFont, marginBottom: -1, transition: "all 0.2s", whiteSpace: "nowrap" }}>
+              style={{ background: "none", border: "none", borderBottom: `2px solid ${nav===t.id ? "#4a9eff" : "transparent"}`, color: nav===t.id ? "#fff" : "rgba(255,255,255,0.45)", padding: "12px 14px", fontSize: 12, cursor: "pointer", fontFamily: bodyFont, marginBottom: -1, transition: "all 0.2s", whiteSpace: "nowrap" }}>
               {t.label}
             </button>
           ))}
@@ -471,7 +471,7 @@ export default function AzaApp() {
                       <span style={{ color: s.accent, fontSize: 16 }}>{s.icon}</span>
                       <span style={{ fontSize: 16, fontFamily }}>{s[lang].label}</span>
                     </div>
-                    <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontFamily: bodyFont }}>{s[lang].tagline}</p>
+                    <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontFamily: bodyFont }}>{s[lang].tagline}</p>
                   </div>
                   <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 20 }}>{isRTL ? "‹" : "›"}</span>
                 </div>
@@ -504,7 +504,7 @@ export default function AzaApp() {
                       <span style={{ color: s.accent, fontSize: 16 }}>{s.icon}</span>
                       <span style={{ fontSize: 16, fontFamily }}>{s[lang].label}</span>
                     </div>
-                    <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12, fontFamily: bodyFont }}>{s[lang].tagline}</p>
+                    <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontFamily: bodyFont }}>{s[lang].tagline}</p>
                   </div>
                   <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 20 }}>{isRTL ? "‹" : "›"}</span>
                 </div>
