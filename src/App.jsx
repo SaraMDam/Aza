@@ -316,7 +316,7 @@ export default function AzaApp() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [subscribed, setSubscribed] = useState(false);
+  const [subscribed, setSubscribed] = useState(true);
   const [freeUsed, setFreeUsed] = useState(false);
   const [notifyEmail, setNotifyEmail] = useState("");
   const [notified, setNotified] = useState({});
@@ -692,6 +692,7 @@ export default function AzaApp() {
                 <SectionTags sections={playingTrack.sections} lang={lang} />
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }} title="Looping">🔁</span>
                 <span style={{ color: primaryAccent, fontSize: 10, letterSpacing: 1 }}>{playingTrack.hz}</span>
                 <button onClick={() => { setPlayingTrack(null); setIsPlaying(false); setProgress(0); }} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 20 }}>×</button>
               </div>
