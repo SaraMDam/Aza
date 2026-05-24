@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 
 const SECTIONS = {
-  rest:  { en: { label: "Rest & Return",   tagline: "Let the body remember how to rest" }, ar: { label: "الراحة والعودة",  tagline: "دَع الجسد يتذكّر كيف يرتاح" }, icon: "◑", accent: "#60a5fa" },
-  focus: { en: { label: "Focus & Clarity", tagline: "A clear mind is a powerful mind"   }, ar: { label: "التركيز والوضوح", tagline: "الذهن الصافي ذهن قوي"        }, icon: "◈", accent: "#60c4ff" },
-  heart: { en: { label: "Heart & Healing", tagline: "Return to the warmth within"        }, ar: { label: "القلب والتشافي",  tagline: "عُد إلى الدفء الذي بداخلك"  }, icon: "♡", accent: "#7dd4fc" },
+  rest:  { en: { label: "Rest & Return",   tagline: "Let the body remember how to rest" }, ar: { label: "الراحة والعودة",  tagline: "دَع الجسد يتذكّر كيف يرتاح" }, icon: "◑", accent: "#6a96d4" },
+  focus: { en: { label: "Focus & Clarity", tagline: "A clear mind is a powerful mind"   }, ar: { label: "التركيز والوضوح", tagline: "الذهن الصافي ذهن قوي"        }, icon: "◈", accent: "#76b09a" },
+  heart: { en: { label: "Heart & Healing", tagline: "Return to the warmth within"        }, ar: { label: "القلب والتشافي",  tagline: "عُد إلى الدفء الذي بداخلك"  }, icon: "♡", accent: "#a094b3" },
 };
 
 const allTracks = [
@@ -279,7 +279,7 @@ function TrackRow({ track, isPlaying, onPlay, showAdd, onAdd, inPlaylist, lang }
   const isRTL = lang === "ar";
   return (
     <div onClick={() => onPlay(track)}
-      style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", background: isPlaying ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.02)", border: `1px solid ${isPlaying ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.09)"}`, borderRadius: 14, marginBottom: 8, cursor: "pointer", transition: "all 0.2s" }}
+      style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", background: isPlaying ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.02)", border: `1px solid ${isPlaying ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.05)"}`, borderRadius: 14, marginBottom: 8, cursor: "pointer", transition: "all 0.2s" }}
       onMouseEnter={e => { if (!isPlaying) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
       onMouseLeave={e => { if (!isPlaying) e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
     >
@@ -287,9 +287,9 @@ function TrackRow({ track, isPlaying, onPlay, showAdd, onAdd, inPlaylist, lang }
         {isPlaying ? <WaveVisualizer color="#050f23" /> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>▶</span>}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontFamily: isRTL ? "'Noto Naskh Arabic', serif" : "'Cormorant Garamond', serif", fontWeight: 400, color: "#fff", marginBottom: 2 }}>{t.title}</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 2 }}>{t.subtitle}</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.42)", marginBottom: 4, fontStyle: isRTL ? "normal" : "italic" }}>{t.desc}</div>
+        <div style={{ fontSize: 14, fontFamily: isRTL ? "'Noto Naskh Arabic', serif" : "'Fraunces', serif", fontWeight: 400, color: "#fff", marginBottom: 2 }}>{t.title}</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 2 }}>{t.subtitle}</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 4, fontStyle: "normal" }}>{t.desc}</div>
         <SectionTags sections={track.sections} lang={lang} />
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0, paddingTop: 2 }}>
@@ -334,8 +334,8 @@ export default function AzaApp() {
   const isRTL = lang === "ar";
   const section = activeSection ? meditationSections[activeSection] : null;
   const sectionInfo = activeSection ? SECTIONS[activeSection] : null;
-  const fontFamily = isRTL ? "'Noto Naskh Arabic', serif" : "'Cormorant Garamond', serif";
-  const bodyFont = isRTL ? "'Noto Sans Arabic', sans-serif" : "'DM Sans', sans-serif";
+  const fontFamily = isRTL ? "'Noto Naskh Arabic', serif" : "'Fraunces', serif";
+  const bodyFont = isRTL ? "'Noto Sans Arabic', sans-serif" : "'Plus Jakarta Sans', sans-serif";
 
   useEffect(() => { document.documentElement.dir = isRTL ? "rtl" : "ltr"; }, [lang]);
   useEffect(() => {
@@ -379,7 +379,7 @@ export default function AzaApp() {
 
   const primaryAccent = playingTrack ? SECTIONS[playingTrack.sections[0]].accent : "#4a9eff";
   const footerProps = { ui, bodyFont, onTerms: () => setLegalPage("terms"), onPrivacy: () => setLegalPage("privacy") };
-  const GFONTS = "@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500&family=Noto+Naskh+Arabic:wght@300;400;500&family=Noto+Sans+Arabic:wght@300;400&display=swap');";
+  const GFONTS = "@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Plus+Jakarta+Sans:wght@300;400;500&family=Noto+Naskh+Arabic:wght@300;400;500&family=Noto+Sans+Arabic:wght@300;400&display=swap');";
   const BASE_CSS = `${GFONTS} *{box-sizing:border-box;margin:0;padding:0;} ::-webkit-scrollbar{width:0;} @keyframes wave{0%,100%{transform:scaleY(0.3)}50%{transform:scaleY(1)}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}} @keyframes pulse{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:0.7;transform:scale(1.05)}} input::placeholder{color:rgba(255,255,255,0.2)} input:focus{outline:none;border-color:rgba(74,158,255,0.4)!important}`;
 
   if (!onboarded) return (
@@ -388,7 +388,7 @@ export default function AzaApp() {
       <div style={{ textAlign: "center", padding: "0 32px", animation: "fadeUp 0.8s ease both", maxWidth: 400, width: "100%" }}>
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 40 }}>
           {["en","ar"].map(l => (
-            <button key={l} onClick={() => setLang(l)} style={{ background: lang===l ? "rgba(74,158,255,0.15)" : "transparent", border: `1px solid ${lang===l ? "rgba(74,158,255,0.4)" : "rgba(255,255,255,0.15)"}`, color: lang===l ? "#4a9eff" : "rgba(255,255,255,0.4)", borderRadius: 20, padding: "6px 18px", fontSize: 12, cursor: "pointer", fontFamily: l==="ar" ? "'Noto Sans Arabic'" : "'DM Sans'", transition: "all 0.2s" }}>
+            <button key={l} onClick={() => setLang(l)} style={{ background: lang===l ? "rgba(74,158,255,0.15)" : "transparent", border: `1px solid ${lang===l ? "rgba(74,158,255,0.4)" : "rgba(255,255,255,0.15)"}`, color: lang===l ? "#4a9eff" : "rgba(255,255,255,0.4)", borderRadius: 20, padding: "6px 18px", fontSize: 12, cursor: "pointer", fontFamily: l==="ar" ? "'Noto Sans Arabic'" : "'Plus Jakarta Sans'", transition: "all 0.2s" }}>
               {l === "en" ? "EN" : "عربي"}
             </button>
           ))}
@@ -397,7 +397,7 @@ export default function AzaApp() {
         <div style={{ fontSize: 10, letterSpacing: "0.3em", color: "rgba(255,255,255,0.25)", textTransform: "uppercase", marginBottom: 16, fontFamily: bodyFont }}>{ui.welcome}</div>
         <h1 style={{ fontSize: 72, fontFamily, fontWeight: 300, color: "#fff", lineHeight: 1, marginBottom: 20 }}>aza</h1>
         <div style={{ width: 40, height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)", margin: "0 auto 24px" }} />
-        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 15, lineHeight: 1.8, fontWeight: 300, maxWidth: 280, margin: "0 auto 48px", fontFamily: bodyFont }}>{ui.tagline}</p>
+        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, lineHeight: 1.8, fontWeight: 300, maxWidth: 280, margin: "0 auto 48px", fontFamily: bodyFont }}>{ui.tagline}</p>
         <button onClick={() => setOnboarded(true)} style={{ background: "linear-gradient(135deg, #4a9eff, #60c4ff)", border: "none", borderRadius: 30, padding: "14px 48px", color: "#050f23", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: bodyFont, letterSpacing: "0.08em", boxShadow: "0 8px 32px rgba(74,158,255,0.25)", transition: "all 0.2s" }}
           onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
           onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
@@ -431,7 +431,7 @@ export default function AzaApp() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ display: "flex", gap: 4 }}>
               {["en","ar"].map(l => (
-                <button key={l} onClick={() => setLang(l)} style={{ background: lang===l ? "rgba(74,158,255,0.15)" : "transparent", border: `1px solid ${lang===l ? "rgba(74,158,255,0.3)" : "rgba(255,255,255,0.1)"}`, color: lang===l ? "#4a9eff" : "rgba(255,255,255,0.3)", borderRadius: 14, padding: "4px 10px", fontSize: 10, cursor: "pointer", fontFamily: l==="ar" ? "'Noto Sans Arabic'" : "'DM Sans'", transition: "all 0.2s" }}>
+                <button key={l} onClick={() => setLang(l)} style={{ background: lang===l ? "rgba(74,158,255,0.15)" : "transparent", border: `1px solid ${lang===l ? "rgba(74,158,255,0.3)" : "rgba(255,255,255,0.1)"}`, color: lang===l ? "#4a9eff" : "rgba(255,255,255,0.3)", borderRadius: 14, padding: "4px 10px", fontSize: 10, cursor: "pointer", fontFamily: l==="ar" ? "'Noto Sans Arabic'" : "'Plus Jakarta Sans'", transition: "all 0.2s" }}>
                   {l === "en" ? "EN" : "عربي"}
                 </button>
               ))}
@@ -445,7 +445,7 @@ export default function AzaApp() {
         <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.07)", marginBottom: 32, overflowX: "auto" }}>
           {[{id:"home",label:ui.home},{id:"meditate",label:ui.meditate},{id:"music",label:ui.music},{id:"playlists",label:ui.playlists}].map(t => (
             <button key={t.id} onClick={() => { setNav(t.id); setActiveSection(null); }}
-              style={{ background: "none", border: "none", borderBottom: `2px solid ${nav===t.id ? "#4a9eff" : "transparent"}`, color: nav===t.id ? "#fff" : "rgba(255,255,255,0.45)", padding: "12px 14px", fontSize: 12, cursor: "pointer", fontFamily: bodyFont, marginBottom: -1, transition: "all 0.2s", whiteSpace: "nowrap" }}>
+              style={{ background: "none", border: "none", borderBottom: `2px solid ${nav===t.id ? "#4a9eff" : "transparent"}`, color: nav===t.id ? "#fff" : "rgba(255,255,255,0.3)", padding: "12px 14px", fontSize: 12, cursor: "pointer", fontFamily: bodyFont, marginBottom: -1, transition: "all 0.2s", whiteSpace: "nowrap" }}>
               {t.label}
             </button>
           ))}
@@ -471,7 +471,7 @@ export default function AzaApp() {
                       <span style={{ color: s.accent, fontSize: 16 }}>{s.icon}</span>
                       <span style={{ fontSize: 16, fontFamily }}>{s[lang].label}</span>
                     </div>
-                    <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontFamily: bodyFont }}>{s[lang].tagline}</p>
+                    <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, fontFamily: bodyFont }}>{s[lang].tagline}</p>
                   </div>
                   <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 20 }}>{isRTL ? "‹" : "›"}</span>
                 </div>
@@ -504,7 +504,7 @@ export default function AzaApp() {
                       <span style={{ color: s.accent, fontSize: 16 }}>{s.icon}</span>
                       <span style={{ fontSize: 16, fontFamily }}>{s[lang].label}</span>
                     </div>
-                    <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, fontFamily: bodyFont }}>{s[lang].tagline}</p>
+                    <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, fontFamily: bodyFont }}>{s[lang].tagline}</p>
                   </div>
                   <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 20 }}>{isRTL ? "‹" : "›"}</span>
                 </div>
