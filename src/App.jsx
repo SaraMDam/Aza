@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
+const R2_BASE = "https://pub-296ac8e5f201453fbddfdbd8902dad2f.r2.dev";
+
 const SECTIONS = {
   rest:  { en: { label: "Rest & Return",   tagline: "Let the body remember how to rest" }, ar: { label: "الراحة والعودة",  tagline: "دَع الجسد يتذكّر كيف يرتاح" }, icon: "◑", accent: "#6a96d4" },
   focus: { en: { label: "Focus & Clarity", tagline: "A clear mind is a powerful mind"   }, ar: { label: "التركيز والوضوح", tagline: "الذهن الصافي ذهن قوي"        }, icon: "◈", accent: "#76b09a" },
@@ -7,22 +9,22 @@ const SECTIONS = {
 };
 
 const allTracks = [
-  { id: "t1",  en: { title: "Drift, Let Sleep Find You",  subtitle: "For Sleep & Return",  desc: "For falling asleep or drifting back. Stop trying. Let it find you." },                                                                              ar: { title: "حين تحتاج النوم .. دعه يأخذ بيدك", subtitle: "للنوم والعودة إليه",    desc: "تبحث عن النوم، أو استيقظت في منتصف الليل. هذا الصوت يمسك بيدك، ويأخذك بهدوء إلى حيث تحتاج أن تكون." }, duration: "9:36", hz: "528 Hz", sections: ["rest"] },
-  { id: "t2",  en: { title: "Joy",                         subtitle: "Bloom",               desc: "For the mornings, the hard days, and every moment in between." },                                                                                   ar: { title: "بهجة .. إشراق",                    subtitle: "تفتّح",                 desc: "للصباح الجديد، واليوم الثقيل، وكل لحظة بينهما." },                                                                                             duration: "7:13", hz: "639 Hz", sections: ["heart"] },
-  { id: "t3",  en: { title: "Reset .. Just Breathe",       subtitle: "The Long Exhale",     desc: "For when everything becomes too much. Breathe. Go back lighter." },                                                                                ar: { title: "ضع كل شيء جانبًا .. تنفَّس",      subtitle: "مع كل نَفَس",           desc: "لليوم الثقيل، واللحظة التي يصبح فيها كل شيء كثيرًا. ضع ما تحمله، وتنفّس. ستعود أخف." },                                                    duration: "9:24", hz: "528 Hz", sections: ["rest"] },
-  { id: "t4",  en: { title: "For Love",                    subtitle: "Where Love Lives",    desc: "Love is not something you find. It's something you return to." },                                                                                  ar: { title: "من القلب",                         subtitle: "حيث يسكن الحب",         desc: "الكون يتكلم لغة واحدة. هذا الصوت يعيدك إليها." },                                                                                             duration: "7:25", hz: "639 Hz", sections: ["heart","rest"] },
-  { id: "t5",  en: { title: "Locked In .. Deep Focus",     subtitle: "Mental Absorption",   desc: "For the work that demands your full attention. Lock in. Go deep. Get it done." },                                                                  ar: { title: "تركيز وصفاء .. إنجاز",            subtitle: "استيعاب ذهني",          desc: "للعمل الذي يحتاج كل انتباهك .. هيّئ ذهنك للتركيز العميق .. وابقَ فيه حتى تُنجز ما جئت من أجله." },                                          duration: "8:29", hz: "40 Hz",  sections: ["focus"] },
-  { id: "t6",  en: { title: "Back to Center",              subtitle: "Emotional Balance",   desc: "When you feel off balance, overwhelmed, or just not yourself. This brings you back." },                                                            ar: { title: "العودة إلى مركزك",                subtitle: "توازن عاطفي",           desc: "حين تشعر أنك خارج توازنك، أو أن الأمور أكبر منك، أو أنك لست أنت. هذا يعيدك." },                                                             duration: "8:10", hz: "432 Hz", sections: ["rest","heart"] },
-  { id: "t7",  en: { title: "Quietly, Everything Changes", subtitle: "Return to Center",    desc: "For the heavy heart .. the tired mind .. the weight you have been carrying. Sit with this. Quietly, everything changes." },                        ar: { title: "في هذا الهدوء .. كل شيء يتغيّر",  subtitle: "العودة إلى المركز",     desc: "للقلب الثقيل، والعقل المتعب، وما تحمله منذ زمن. فقط اجلس مع هذا الصوت .. في هذا الهدوء .. كل شيء يتغيّر." },                              duration: "9:07", hz: "432 Hz", sections: ["heart","rest"] },
-  { id: "t8",  en: { title: "Your Creative Space",         subtitle: "Clarity Boost",       desc: "For the empty canvas. This is your space. No pressure. Just create." },                                                                            ar: { title: "فضاؤك الإبداعي",                  subtitle: "صفاء متجدّد",           desc: "للصفحة البيضاء، واللحظة التي يصمت فيها الإلهام. فضاؤك الإبداعي مفتوح لك." },                                                               duration: "8:20", hz: "40 Hz",  sections: ["focus"] },
-  { id: "t9",  en: { title: "Deep Peace .. Within",        subtitle: "Quiet Presence",      desc: "Your mind can be loud. Your heart can be heavy. Peace lives underneath all of it." },                                                              ar: { title: "سلامك الداخلي .. أمانك",          subtitle: "هدوء داخلي",            desc: "قد يكون العقل صاخبًا والقلب ثقيلًا .. لكن السلام موجودٌ في الأعماق .. دائمًا هناك." },                                                      duration: "5:19", hz: "432 Hz", sections: ["rest","heart"] },
-  { id: "t10", en: { title: "This Moment .. Right Here",   subtitle: "Quiet Presence",      desc: "Not yesterday. Not tomorrow. Just this. Three minutes to come back to where you already are." },                                                   ar: { title: "هذه اللحظة .. هنا",               subtitle: "حضور هادئ",             desc: "ليس الأمس، وليس الغد. فقط هذه اللحظة. ثلاث دقائق تعيدك إلى حيث أنت." },                                                                    duration: "3:41", hz: "432 Hz", sections: ["focus","rest"] },
+  { id: "t1",  audio: "drift.mp3",          en: { title: "Drift, Let Sleep Find You",  subtitle: "For Sleep & Return",  desc: "For falling asleep or drifting back. Stop trying. Let it find you." },                                                                              ar: { title: "حين تحتاج النوم .. دعه يأخذ بيدك", subtitle: "للنوم والعودة إليه",    desc: "تبحث عن النوم، أو استيقظت في منتصف الليل. هذا الصوت يمسك بيدك، ويأخذك بهدوء إلى حيث تحتاج أن تكون." }, duration: "9:36", hz: "528 Hz", sections: ["rest"] },
+  { id: "t2",  audio: "joy.mp3",            en: { title: "Joy",                         subtitle: "Bloom",               desc: "For the mornings, the hard days, and every moment in between." },                                                                                   ar: { title: "بهجة .. إشراق",                    subtitle: "تفتّح",                 desc: "للصباح الجديد، واليوم الثقيل، وكل لحظة بينهما." },                                                                                             duration: "7:13", hz: "639 Hz", sections: ["heart"] },
+  { id: "t3",  audio: "reset.mp3",          en: { title: "Reset .. Just Breathe",       subtitle: "The Long Exhale",     desc: "For when everything becomes too much. Breathe. Go back lighter." },                                                                                ar: { title: "ضع كل شيء جانبًا .. تنفَّس",      subtitle: "مع كل نَفَس",           desc: "لليوم الثقيل، واللحظة التي يصبح فيها كل شيء كثيرًا. ضع ما تحمله، وتنفّس. ستعود أخف." },                                                    duration: "9:24", hz: "528 Hz", sections: ["rest"] },
+  { id: "t4",  audio: "for-love.mp3",       en: { title: "For Love",                    subtitle: "Where Love Lives",    desc: "Love is not something you find. It's something you return to." },                                                                                  ar: { title: "من القلب",                         subtitle: "حيث يسكن الحب",         desc: "الكون يتكلم لغة واحدة. هذا الصوت يعيدك إليها." },                                                                                             duration: "7:25", hz: "639 Hz", sections: ["heart","rest"] },
+  { id: "t5",  audio: "deep-focus.mp3",     en: { title: "Locked In .. Deep Focus",     subtitle: "Mental Absorption",   desc: "For the work that demands your full attention. Lock in. Go deep. Get it done." },                                                                  ar: { title: "تركيز وصفاء .. إنجاز",            subtitle: "استيعاب ذهني",          desc: "للعمل الذي يحتاج كل انتباهك .. هيّئ ذهنك للتركيز العميق .. وابقَ فيه حتى تُنجز ما جئت من أجله." },                                          duration: "8:29", hz: "40 Hz",  sections: ["focus"] },
+  { id: "t6",  audio: "back-to-center.mp3", en: { title: "Back to Center",              subtitle: "Emotional Balance",   desc: "When you feel off balance, overwhelmed, or just not yourself. This brings you back." },                                                            ar: { title: "العودة إلى مركزك",                subtitle: "توازن عاطفي",           desc: "حين تشعر أنك خارج توازنك، أو أن الأمور أكبر منك، أو أنك لست أنت. هذا يعيدك." },                                                             duration: "8:10", hz: "432 Hz", sections: ["rest","heart"] },
+  { id: "t7",  audio: "quietly.mp3",        en: { title: "Quietly, Everything Changes", subtitle: "Return to Center",    desc: "For the heavy heart .. the tired mind .. the weight you have been carrying. Sit with this. Quietly, everything changes." },                        ar: { title: "في هذا الهدوء .. كل شيء يتغيّر",  subtitle: "العودة إلى المركز",     desc: "للقلب الثقيل، والعقل المتعب، وما تحمله منذ زمن. فقط اجلس مع هذا الصوت .. في هذا الهدوء .. كل شيء يتغيّر." },                              duration: "9:07", hz: "432 Hz", sections: ["heart","rest"] },
+  { id: "t8",  audio: "creative-space.mp3", en: { title: "Your Creative Space",         subtitle: "Clarity Boost",       desc: "For the empty canvas. This is your space. No pressure. Just create." },                                                                            ar: { title: "فضاؤك الإبداعي",                  subtitle: "صفاء متجدّد",           desc: "للصفحة البيضاء، واللحظة التي يصمت فيها الإلهام. فضاؤك الإبداعي مفتوح لك." },                                                               duration: "8:20", hz: "40 Hz",  sections: ["focus"] },
+  { id: "t9",  audio: "deep-peace.mp3",     en: { title: "Deep Peace .. Within",        subtitle: "Quiet Presence",      desc: "Your mind can be loud. Your heart can be heavy. Peace lives underneath all of it." },                                                              ar: { title: "سلامك الداخلي .. أمانك",          subtitle: "هدوء داخلي",            desc: "قد يكون العقل صاخبًا والقلب ثقيلًا .. لكن السلام موجودٌ في الأعماق .. دائمًا هناك." },                                                      duration: "5:19", hz: "432 Hz", sections: ["rest","heart"] },
+  { id: "t10", audio: "this-moment.mp3",    en: { title: "This Moment .. Right Here",   subtitle: "Quiet Presence",      desc: "Not yesterday. Not tomorrow. Just this. Three minutes to come back to where you already are." },                                                   ar: { title: "هذه اللحظة .. هنا",               subtitle: "حضور هادئ",             desc: "ليس الأمس، وليس الغد. فقط هذه اللحظة. ثلاث دقائق تعيدك إلى حيث أنت." },                                                                    duration: "3:41", hz: "432 Hz", sections: ["focus","rest"] },
 ];
 
 const meditationSections = {
-  rest:  { accent: "#4a9eff", icon: "◑", trackIds: ["t1","t3","t6","t4","t7","t9","t10"], meditation: { id: "m1", en: { title: "Fall Asleep", desc: "Let the night carry what is left of your day. You do not have to do anything. Just breathe." }, ar: { title: "في أحضان الليل .. استسلم", desc: "في هذا الهدوء، ليس عليك أن تفعل شيئًا. فقط سلِّم، وتنفّس، ودع الليل يحمل ما تبقّى من يومك." }, duration: "18:00" } },
-  focus: { accent: "#60c4ff", icon: "◈", trackIds: ["t5","t8","t10"],          meditation: { id: "m2", en: { title: "Clear Mind",  desc: "When the noise settles, what is real appears. A meditation to bring you back to your center." },          ar: { title: "ما وراء الضجيج",           desc: "حين يهدأ الضجيج، يظهر ما هو حقيقي. تأمّل يُعيدك إلى مركزك، ويمنحك ذهنًا صافيًا وقلبًا حاضرًا." },  duration: "15:00" } },
-  heart: { accent: "#7dd4fc", icon: "♡", trackIds: ["t2","t4","t6","t7","t9"], meditation: { id: "m3", en: { title: "Heal",        desc: "For everything that hurts. You do not have to name it. Just be here." },                                   ar: { title: "تشافَ بلطف",               desc: "الجسد يسمع ما لا تقوله. هذا التأمّل مساحة لكل ما يحتاج إلى راحة. مهما كان، وأينما كان." },            duration: "20:00", comingSoon: true } },
+  rest:  { accent: "#6a96d4", icon: "◑", trackIds: ["t1","t3","t6","t4","t7","t9","t10"], meditation: { id: "m1", en: { title: "Fall Asleep", desc: "Let the night carry what is left of your day. You do not have to do anything. Just breathe.", comingSoon: true }, ar: { title: "في أحضان الليل .. استسلم", desc: "في هذا الهدوء، ليس عليك أن تفعل شيئًا. فقط سلِّم، وتنفّس، ودع الليل يحمل ما تبقّى من يومك.", audio: "fall-asleep-ar.mp3" }, duration: "18:00" } },
+  focus: { accent: "#76b09a", icon: "◈", trackIds: ["t5","t8","t10"],          meditation: { id: "m2", en: { title: "Clear Mind",  desc: "When the noise settles, what is real appears. A meditation to bring you back to your center.", comingSoon: true }, ar: { title: "ما وراء الضجيج", desc: "حين يهدأ الضجيج، يظهر ما هو حقيقي. تأمّل يُعيدك إلى مركزك، ويمنحك ذهنًا صافيًا وقلبًا حاضرًا.", audio: "clear-mind-ar.mp3" }, duration: "15:00" } },
+  heart: { accent: "#a094b3", icon: "♡", trackIds: ["t2","t4","t6","t7","t9"], meditation: { id: "m3", en: { title: "Heal", desc: "For everything that hurts. You do not have to name it. Just be here.", comingSoon: true }, ar: { title: "تشافَ بلطف", desc: "الجسد يسمع ما لا تقوله. هذا التأمّل مساحة لكل ما يحتاج إلى راحة. مهما كان، وأينما كان.", comingSoon: true }, duration: "20:00" } },
 };
 
 const LEGAL = {
@@ -329,6 +331,7 @@ export default function AzaApp() {
   const [addingToPlaylist, setAddingToPlaylist] = useState(null);
   const [shuffled, setShuffled] = useState(null);
   const intervalRef = useRef(null);
+  const audioRef = useRef(null);
 
   const ui = UI[lang];
   const isRTL = lang === "ar";
@@ -337,12 +340,31 @@ export default function AzaApp() {
   const fontFamily = isRTL ? "'Noto Naskh Arabic', serif" : "'Fraunces', serif";
   const bodyFont = isRTL ? "'Noto Sans Arabic', sans-serif" : "'Plus Jakarta Sans', sans-serif";
 
+  // Resolve audio URL for music track (item.audio) or meditation (item[lang].audio)
+  const getAudioUrl = (item) => {
+    if (!item) return null;
+    if (item.audio) return `${R2_BASE}/${item.audio}`;
+    const langData = item[lang];
+    if (langData && langData.audio) return `${R2_BASE}/${langData.audio}`;
+    return null;
+  };
+  const currentAudioUrl = getAudioUrl(playingTrack);
+
   useEffect(() => { document.documentElement.dir = isRTL ? "rtl" : "ltr"; }, [lang]);
+
+  // Real audio playback control
   useEffect(() => {
-    if (isPlaying) { intervalRef.current = setInterval(() => setProgress(p => p >= 100 ? 0 : p + 0.15), 500); }
-    else clearInterval(intervalRef.current);
-    return () => clearInterval(intervalRef.current);
-  }, [isPlaying]);
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPlaying) {
+      audio.play().catch(() => setIsPlaying(false));
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying, currentAudioUrl]);
+
+  // Reset progress when switching tracks
+  useEffect(() => { setProgress(0); }, [currentAudioUrl]);
 
   const handlePlay = (item) => {
     if (!subscribed && freeUsed) { setShowPaywall(true); return; }
@@ -522,8 +544,8 @@ export default function AzaApp() {
             <div style={{ width: 30, height: 1, background: `${section.accent}66`, marginBottom: 28 }} />
             <div style={{ fontSize: 10, letterSpacing: "0.15em", color: "rgba(255,255,255,0.25)", textTransform: "uppercase", marginBottom: 12, fontFamily: bodyFont }}>{ui.guidedMed}</div>
             {[section.meditation].map(item => {
-              const isComingSoon = item.comingSoon;
               const medData = item[lang];
+              const isComingSoon = medData.comingSoon;
               return (
                 <div key={item.id} onClick={() => !isComingSoon && handlePlay(item)}
                   style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "18px 20px", marginBottom: 28, cursor: isComingSoon ? "default" : "pointer", transition: "all 0.2s" }}
@@ -684,6 +706,15 @@ export default function AzaApp() {
 
       {playingTrack && (
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100, background: "rgba(5,15,35,0.97)", backdropFilter: "blur(20px)", borderTop: "1px solid rgba(255,255,255,0.08)", padding: "14px 24px 22px" }}>
+          {/* Real audio element — loops automatically */}
+          <audio
+            ref={audioRef}
+            src={currentAudioUrl || undefined}
+            loop={true}
+            onTimeUpdate={e => { const a = e.currentTarget; if (a.duration) setProgress((a.currentTime / a.duration) * 100); }}
+            onEnded={() => { /* loop handles repeat */ }}
+            onError={() => setIsPlaying(false)}
+          />
           <div style={{ maxWidth: 480, margin: "0 auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
               <div>
@@ -698,7 +729,13 @@ export default function AzaApp() {
               </div>
             </div>
             <div style={{ position: "relative", height: 3, background: "rgba(255,255,255,0.1)", borderRadius: 2, marginBottom: 10, cursor: "pointer" }}
-              onClick={e => { const r = e.currentTarget.getBoundingClientRect(); setProgress(((e.clientX - r.left) / r.width) * 100); }}>
+              onClick={e => {
+                const r = e.currentTarget.getBoundingClientRect();
+                const pct = ((e.clientX - r.left) / r.width);
+                setProgress(pct * 100);
+                const a = audioRef.current;
+                if (a && a.duration) a.currentTime = pct * a.duration;
+              }}>
               <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${progress}%`, background: `linear-gradient(90deg, ${primaryAccent}, #60c4ff)`, borderRadius: 2, transition: "width 0.3s" }} />
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
