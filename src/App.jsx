@@ -399,7 +399,7 @@ export default function AzaApp() {
     return matchesSearch && matchesFilter;
   });
 
-  const primaryAccent = playingTrack ? SECTIONS[playingTrack.sections[0]].accent : "#4a9eff";
+  const primaryAccent = playingTrack ? (playingTrack.sections ? SECTIONS[playingTrack.sections[0]].accent : (activeSection ? SECTIONS[activeSection].accent : "#6a96d4")) : "#6a96d4";
   const footerProps = { ui, bodyFont, onTerms: () => setLegalPage("terms"), onPrivacy: () => setLegalPage("privacy") };
   const GFONTS = "@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Plus+Jakarta+Sans:wght@300;400;500&family=Noto+Naskh+Arabic:wght@300;400;500&family=Noto+Sans+Arabic:wght@300;400&display=swap');";
   const BASE_CSS = `${GFONTS} *{box-sizing:border-box;margin:0;padding:0;} ::-webkit-scrollbar{width:0;} @keyframes wave{0%,100%{transform:scaleY(0.3)}50%{transform:scaleY(1)}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}} @keyframes pulse{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:0.7;transform:scale(1.05)}} input::placeholder{color:rgba(255,255,255,0.2)} input:focus{outline:none;border-color:rgba(74,158,255,0.4)!important}`;
@@ -720,11 +720,11 @@ export default function AzaApp() {
               <div>
                 <div style={{ color: "#fff", fontSize: 14, fontFamily, marginBottom: 2 }}>{playingTrack[lang]?.title || playingTrack.en.title}</div>
                 <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, marginBottom: 4, fontFamily: bodyFont }}>{playingTrack[lang]?.subtitle || playingTrack.en.subtitle}</div>
-                <SectionTags sections={playingTrack.sections} lang={lang} />
+                {playingTrack.sections && <SectionTags sections={playingTrack.sections} lang={lang} />}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }} title="Looping">🔁</span>
-                <span style={{ color: primaryAccent, fontSize: 10, letterSpacing: 1 }}>{playingTrack.hz}</span>
+                {playingTrack.hz && <span style={{ color: primaryAccent, fontSize: 10, letterSpacing: 1 }}>{playingTrack.hz}</span>}
                 <button onClick={() => { setPlayingTrack(null); setIsPlaying(false); setProgress(0); }} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 20 }}>×</button>
               </div>
             </div>
