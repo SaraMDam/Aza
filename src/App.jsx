@@ -547,8 +547,8 @@ export default function AzaApp() {
   useEffect(() => {
     if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
     const set = (action, handler) => { try { navigator.mediaSession.setActionHandler(action, handler); } catch (e) {} };
-    set("play", () => setIsPlaying(true));
-    set("pause", () => setIsPlaying(false));
+    set("play", () => { const a = audioRef.current; if (a) a.play().catch(() => {}); setIsPlaying(true); });
+    set("pause", () => { const a = audioRef.current; if (a) a.pause(); setIsPlaying(false); });
     set("previoustrack", () => playPrev());
     set("nexttrack", () => playNext());
     set("seekbackward", () => seek(-10));
