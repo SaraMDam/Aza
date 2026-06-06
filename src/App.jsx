@@ -436,7 +436,16 @@ export default function AzaApp() {
     if (!subscribed && freeUsed) { setShowPaywall(true); return; }
     if (!subscribed && !freeUsed) setFreeUsed(true);
     if (playingTrack?.id === item.id) { setIsPlaying(p => !p); return; }
-    setQueue([item]); setQueueIndex(0); setQueueIsPlaylist(false);
+    // Single music tracks get the whole music library as a queue, so prev/next
+    // can move through it. (A track still loops on its own — this isn't a playlist.)
+    if (!isMeditation(item)) {
+      const idx = allTracks.findIndex(t => t.id === item.id);
+      if (idx >= 0) { setQueue(allTracks); setQueueIndex(idx); }
+      else { setQueue([item]); setQueueIndex(0); }
+    } else {
+      setQueue([item]); setQueueIndex(0);
+    }
+    setQueueIsPlaylist(false);
     setPlayingTrack(item); setIsPlaying(true); setProgress(0);
   };
 
