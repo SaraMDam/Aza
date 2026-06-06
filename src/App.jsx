@@ -959,22 +959,22 @@ export default function AzaApp() {
               }}>
               <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${progress}%`, background: `linear-gradient(90deg, ${primaryAccent}, #60c4ff)`, borderRadius: 2, transition: "width 0.3s" }} />
             </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>{fmtTime(currentTime)}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <button onClick={playPrev} title="Previous" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>⏮</button>
-                <button onClick={() => seek(-10)} title="Back 10 seconds" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1, fontFamily: bodyFont }}>
-                  <span style={{ fontSize: 16 }}>↺</span><span style={{ fontSize: 8, marginTop: 1 }}>10</span>
-                </button>
-                <button onClick={() => setIsPlaying(p => !p)} style={{ width: 46, height: 46, borderRadius: "50%", background: primaryAccent, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: isPlaying ? 13 : 15, color: "#050f23", boxShadow: `0 0 20px ${primaryAccent}44`, transition: "all 0.2s" }}>
-                  {isPlaying ? "⏸" : "▶"}
-                </button>
-                <button onClick={() => seek(10)} title="Forward 10 seconds" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1, fontFamily: bodyFont }}>
-                  <span style={{ fontSize: 16 }}>↻</span><span style={{ fontSize: 8, marginTop: 1 }}>10</span>
-                </button>
-                <button onClick={playNext} title="Next" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>⏭</button>
-              </div>
-              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>{playingTrack.duration}</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 2 }}>
+              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, fontFamily: bodyFont }}>{fmtTime(currentTime)}</span>
+              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, fontFamily: bodyFont }}>{playingTrack.duration}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, padding: "0 4px" }}>
+              <button onClick={playPrev} title="Previous" style={{ minWidth: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", color: "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: 23, lineHeight: 1 }}>⏮</button>
+              <button onClick={() => seek(-10)} title="Back 10 seconds" style={{ minWidth: 48, height: 48, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "none", border: "none", color: "rgba(255,255,255,0.55)", cursor: "pointer", lineHeight: 1, fontFamily: bodyFont }}>
+                <span style={{ fontSize: 21 }}>↺</span><span style={{ fontSize: 9, marginTop: 2 }}>10</span>
+              </button>
+              <button onClick={() => setIsPlaying(p => !p)} style={{ width: 58, height: 58, borderRadius: "50%", background: primaryAccent, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: isPlaying ? 16 : 18, color: "#050f23", boxShadow: `0 0 24px ${primaryAccent}55`, transition: "all 0.2s" }}>
+                {isPlaying ? "⏸" : "▶"}
+              </button>
+              <button onClick={() => seek(10)} title="Forward 10 seconds" style={{ minWidth: 48, height: 48, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "none", border: "none", color: "rgba(255,255,255,0.55)", cursor: "pointer", lineHeight: 1, fontFamily: bodyFont }}>
+                <span style={{ fontSize: 21 }}>↻</span><span style={{ fontSize: 9, marginTop: 2 }}>10</span>
+              </button>
+              <button onClick={playNext} title="Next" style={{ minWidth: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", color: "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: 23, lineHeight: 1 }}>⏭</button>
             </div>
             {isPlaying && <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}><WaveVisualizer color={primaryAccent} /></div>}
           </div>
