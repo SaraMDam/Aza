@@ -333,7 +333,12 @@ export default function AzaApp() {
   const [notified, setNotified] = useState({});
   const [search, setSearch] = useState("");
   const [filterSection, setFilterSection] = useState(null);
-  const [playlists, setPlaylists] = useState([]);
+  const [playlists, setPlaylists] = useState(() => {
+    try {
+      const saved = typeof localStorage !== "undefined" && localStorage.getItem("aza_playlists");
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
   const [activePlaylist, setActivePlaylist] = useState(null);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
@@ -431,6 +436,11 @@ export default function AzaApp() {
 
   // Reset progress when switching tracks
   useEffect(() => { setProgress(0); setCurrentTime(0); }, [currentAudioUrl]);
+
+  // Save playlists to the phone so they survive closing the app.
+  useEffect(() => {
+    try { if (typeof localStorage !== "undefined") localStorage.setItem("aza_playlists", JSON.stringify(playlists)); } catch (e) {}
+  }, [playlists]);
 
   const handlePlay = (item) => {
     if (!subscribed && freeUsed) { setShowPaywall(true); return; }
