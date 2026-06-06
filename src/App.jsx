@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 
 const R2_BASE = "https://pub-296ac8e5f201453fbddfdbd8902dad2f.r2.dev";
+// Logo shown on the phone lock screen / media controls.
+// Uses your existing SVG. For the most reliable artwork on ALL phones, add a
+// 512x512 PNG named icon-512.png to your public folder and uncomment the PNG line.
+const ARTWORK = [
+  { src: "/aza-icon-2.png", sizes: "512x512", type: "image/png" },
+  { src: "/aza-icon.svg", sizes: "any", type: "image/svg+xml" },
+];
 
 const SECTIONS = {
   rest:  { en: { label: "Rest & Return",   tagline: "Let the body remember how to rest" }, ar: { label: "الراحة والعودة",  tagline: "دَع الجسد يتذكّر كيف يرتاح" }, icon: "◑", accent: "#6a96d4" },
@@ -276,8 +283,9 @@ function WaveVisualizer({ color }) {
 }
 
 function TrackRow({ track, isPlaying, onPlay, showAdd, onAdd, inPlaylist, lang }) {
-  const t = track[lang];
-  const primaryAccent = SECTIONS[track.sections[0]].accent;
+  const t = track[lang] || track.en;
+  const isMed = !track.sections;
+  const primaryAccent = track.sections ? SECTIONS[track.sections[0]].accent : "#8aa0c6";
   const isRTL = lang === "ar";
   return (
     <div onClick={() => onPlay(track)}
@@ -286,16 +294,17 @@ function TrackRow({ track, isPlaying, onPlay, showAdd, onAdd, inPlaylist, lang }
       onMouseLeave={e => { if (!isPlaying) e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
     >
       <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, marginTop: 2, background: isPlaying ? primaryAccent : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
-        {isPlaying ? <WaveVisualizer color="#050f23" /> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>▶</span>}
+        {isPlaying ? <WaveVisualizer color="#050f23" /> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{isMed ? "❉" : "▶"}</span>}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontFamily: isRTL ? "'Noto Naskh Arabic', serif" : "'Fraunces', serif", fontWeight: 400, color: "#fff", marginBottom: 2 }}>{t.title}</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 2 }}>{t.subtitle}</div>
+        {t.subtitle && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 2 }}>{t.subtitle}</div>}
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 4, fontStyle: "normal" }}>{t.desc}</div>
-        <SectionTags sections={track.sections} lang={lang} />
+        {track.sections ? <SectionTags sections={track.sections} lang={lang} />
+          : <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: `${primaryAccent}15`, border: `1px solid ${primaryAccent}30`, color: primaryAccent, fontSize: 9, padding: "2px 7px", borderRadius: 10, marginTop: 5 }}>❉ {isRTL ? "تأمّل" : "Meditation"}</span>}
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0, paddingTop: 2 }}>
-        <span style={{ color: primaryAccent, fontSize: 10, letterSpacing: 1 }}>{track.hz}</span>
+        {track.hz && <span style={{ color: primaryAccent, fontSize: 10, letterSpacing: 1 }}>{track.hz}</span>}
         <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>{track.duration}</span>
         {showAdd && (
           <button onClick={e => { e.stopPropagation(); onAdd(track); }}
@@ -329,9 +338,21 @@ export default function AzaApp() {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
   const [addingToPlaylist, setAddingToPlaylist] = useState(null);
+  const [addTargetPlaylist, setAddTargetPlaylist] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
   const [shuffled, setShuffled] = useState(null);
+  const [queue, setQueue] = useState([]);
+  const [queueIndex, setQueueIndex] = useState(0);
+  const [queueIsPlaylist, setQueueIsPlaylist] = useState(false);
+  const [loopPlaylist, setLoopPlaylist] = useState(true);
+  const [loopTrack, setLoopTrack] = useState(true);
+  const [sleepEndsAt, setSleepEndsAt] = useState(null);
+  const [sleepRemainingMs, setSleepRemainingMs] = useState(0);
+  const [sleepSelMin, setSleepSelMin] = useState(0);
+  const [sleepSheetOpen, setSleepSheetOpen] = useState(false);
   const intervalRef = useRef(null);
   const audioRef = useRef(null);
+  const fadeRef = useRef(null);
 
   const ui = UI[lang];
   const isRTL = lang === "ar";
@@ -350,28 +371,189 @@ export default function AzaApp() {
   };
   const currentAudioUrl = getAudioUrl(playingTrack);
 
+  // A music track always has `sections`; a meditation never does.
+  const isMeditation = (item) => !!item && !item.sections;
+  // Resolve audio for any item in a given language (null if not available yet)
+  const itemAudioUrl = (item, l) => {
+    if (!item) return null;
+    if (item.audio) return `${R2_BASE}/${item.audio}`;
+    const d = item[l];
+    return d && d.audio ? `${R2_BASE}/${d.audio}` : null;
+  };
+  const findItemById = (id) => allTracks.find(t => t.id === id)
+    || Object.values(meditationSections).map(s => s.meditation).find(m => m.id === id)
+    || null;
+  const fmtTime = (sec) => {
+    if (!sec || isNaN(sec)) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
   useEffect(() => { document.documentElement.dir = isRTL ? "rtl" : "ltr"; }, [lang]);
 
-  // Real audio playback control
+  // Gently ramp the audio volume to a target; optionally pause when it reaches 0.
+  const FADE_MS = 900;
+  const fadeTo = (target, thenPause) => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (fadeRef.current) { clearInterval(fadeRef.current); fadeRef.current = null; }
+    const start = a.volume;
+    const steps = 30;
+    let i = 0;
+    fadeRef.current = setInterval(() => {
+      i++;
+      const v = start + (target - start) * (i / steps);
+      a.volume = Math.max(0, Math.min(1, v));
+      if (i >= steps) {
+        clearInterval(fadeRef.current); fadeRef.current = null;
+        a.volume = Math.max(0, Math.min(1, target));
+        if (thenPause) a.pause();
+      }
+    }, FADE_MS / steps);
+  };
+
+  // Real audio playback control — with gentle fade in / out.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    if (fadeRef.current) { clearInterval(fadeRef.current); fadeRef.current = null; }
     if (isPlaying) {
-      audio.play().catch(() => setIsPlaying(false));
+      audio.volume = 0;
+      const p = audio.play();
+      if (p && p.then) { p.then(() => fadeTo(1)).catch(() => setIsPlaying(false)); }
+      else { fadeTo(1); }
     } else {
-      audio.pause();
+      fadeTo(0, true);
     }
   }, [isPlaying, currentAudioUrl]);
 
   // Reset progress when switching tracks
-  useEffect(() => { setProgress(0); }, [currentAudioUrl]);
+  useEffect(() => { setProgress(0); setCurrentTime(0); }, [currentAudioUrl]);
 
   const handlePlay = (item) => {
     if (!subscribed && freeUsed) { setShowPaywall(true); return; }
     if (!subscribed && !freeUsed) setFreeUsed(true);
     if (playingTrack?.id === item.id) { setIsPlaying(p => !p); return; }
+    setQueue([item]); setQueueIndex(0); setQueueIsPlaylist(false);
     setPlayingTrack(item); setIsPlaying(true); setProgress(0);
   };
+
+  // Start a playlist (playlist context). Skips items with no audio in this language.
+  const playPlaylist = (tracks, startIndex) => {
+    if (!subscribed && freeUsed) { setShowPaywall(true); return; }
+    if (!subscribed && !freeUsed) setFreeUsed(true);
+    const list = tracks.filter(t => itemAudioUrl(t, lang));
+    if (list.length === 0) return;
+    let idx = 0;
+    if (startIndex != null && tracks[startIndex]) {
+      const found = list.findIndex(t => t.id === tracks[startIndex].id);
+      idx = found >= 0 ? found : 0;
+    }
+    setQueue(list); setQueueIndex(idx); setQueueIsPlaylist(true);
+    setPlayingTrack(list[idx]); setIsPlaying(true); setProgress(0);
+  };
+
+  const goToQueueIndex = (i) => {
+    if (i < 0 || i >= queue.length) return;
+    setQueueIndex(i); setPlayingTrack(queue[i]); setIsPlaying(true); setProgress(0);
+  };
+
+  // When a track finishes:
+  //  - Solo music loops forever (loop attr handles it, this never fires).
+  //  - Solo meditation plays once then stops.
+  //  - In a playlist: advance; at the end, loop the whole playlist ONLY if it is music-only.
+  const handleEnded = () => {
+    if (!queueIsPlaylist) { setIsPlaying(false); return; }
+    const next = queueIndex + 1;
+    if (next < queue.length) { goToQueueIndex(next); return; }
+    if (loopPlaylist) goToQueueIndex(0); else setIsPlaying(false);
+  };
+
+  const playNext = () => {
+    const a = audioRef.current;
+    if (queue.length <= 1) { if (a) { a.currentTime = 0; setProgress(0); } return; }
+    goToQueueIndex((queueIndex + 1) % queue.length);
+  };
+
+  const playPrev = () => {
+    const a = audioRef.current;
+    if (a && a.currentTime > 3) { a.currentTime = 0; setProgress(0); return; }
+    if (queue.length <= 1) { if (a) { a.currentTime = 0; setProgress(0); } return; }
+    goToQueueIndex((queueIndex - 1 + queue.length) % queue.length);
+  };
+
+  const seek = (d) => {
+    const a = audioRef.current;
+    if (!a || !a.duration) return;
+    a.currentTime = Math.max(0, Math.min(a.duration, a.currentTime + d));
+    setProgress((a.currentTime / a.duration) * 100);
+  };
+
+  // Sleep timer — stops playback after the chosen number of minutes.
+  const SLEEP_OPTS = [
+    { min: 0, en: "Off", ar: "إيقاف" },
+    { min: 15, en: "15 minutes", ar: "١٥ دقيقة" },
+    { min: 30, en: "30 minutes", ar: "٣٠ دقيقة" },
+    { min: 45, en: "45 minutes", ar: "٤٥ دقيقة" },
+    { min: 60, en: "1 hour", ar: "ساعة واحدة" },
+  ];
+  const setSleepTimer = (minutes) => {
+    setSleepSheetOpen(false);
+    setSleepSelMin(minutes);
+    if (!minutes) { setSleepEndsAt(null); setSleepRemainingMs(0); return; }
+    const end = Date.now() + minutes * 60000;
+    setSleepEndsAt(end); setSleepRemainingMs(minutes * 60000);
+  };
+  useEffect(() => {
+    if (!sleepEndsAt) return;
+    const id = setInterval(() => {
+      const rem = sleepEndsAt - Date.now();
+      if (rem <= 0) {
+        setIsPlaying(false);
+        setSleepEndsAt(null); setSleepRemainingMs(0); setSleepSelMin(0);
+      } else {
+        setSleepRemainingMs(rem);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [sleepEndsAt]);
+  const sleepMinsLeft = sleepEndsAt ? Math.ceil(sleepRemainingMs / 60000) : 0;
+
+  // --- Lock screen / background media controls (Media Session API) ---
+  // Show the current track on the lock screen with title + artwork.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator) || !playingTrack) return;
+    try {
+      const data = playingTrack[lang] || playingTrack.en;
+      navigator.mediaSession.metadata = new window.MediaMetadata({
+        title: (data && data.title) || "Aza",
+        artist: "Aza",
+        album: "Aza",
+        artwork: ARTWORK,
+      });
+    } catch (e) { /* metadata not supported */ }
+  }, [playingTrack, lang]);
+
+  // Keep the lock-screen play/pause indicator in sync.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    try { navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused"; } catch (e) {}
+  }, [isPlaying, playingTrack]);
+
+  // Wire the lock-screen buttons to our player. Re-bound when the queue changes
+  // so previous/next always act on the current context.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    const set = (action, handler) => { try { navigator.mediaSession.setActionHandler(action, handler); } catch (e) {} };
+    set("play", () => setIsPlaying(true));
+    set("pause", () => setIsPlaying(false));
+    set("previoustrack", () => playPrev());
+    set("nexttrack", () => playNext());
+    set("seekbackward", () => seek(-10));
+    set("seekforward", () => seek(10));
+    set("seekto", (e) => { const a = audioRef.current; if (a && e && e.seekTime != null) { a.currentTime = e.seekTime; setCurrentTime(e.seekTime); } });
+  }, [queue, queueIndex, queueIsPlaylist]);
 
   const createPlaylist = () => {
     if (!newPlaylistName.trim()) return;
@@ -400,6 +582,8 @@ export default function AzaApp() {
   });
 
   const primaryAccent = playingTrack ? (playingTrack.sections ? SECTIONS[playingTrack.sections[0]].accent : (activeSection ? SECTIONS[activeSection].accent : "#6a96d4")) : "#6a96d4";
+  const isSoloMusic = !!playingTrack && !queueIsPlaylist && !isMeditation(playingTrack);
+  const loopCurrent = isSoloMusic && loopTrack;
   const footerProps = { ui, bodyFont, onTerms: () => setLegalPage("terms"), onPrivacy: () => setLegalPage("privacy") };
   const GFONTS = "@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Plus+Jakarta+Sans:wght@300;400;500&family=Noto+Naskh+Arabic:wght@300;400;500&family=Noto+Sans+Arabic:wght@300;400&display=swap');";
   const BASE_CSS = `${GFONTS} *{box-sizing:border-box;margin:0;padding:0;} ::-webkit-scrollbar{width:0;} @keyframes wave{0%,100%{transform:scaleY(0.3)}50%{transform:scaleY(1)}} @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}} @keyframes pulse{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:0.7;transform:scale(1.05)}} input::placeholder{color:rgba(255,255,255,0.2)} input:focus{outline:none;border-color:rgba(74,158,255,0.4)!important}`;
@@ -472,6 +656,21 @@ export default function AzaApp() {
             </button>
           ))}
         </div>
+
+        {addTargetPlaylist && (() => {
+          const tp = playlists.find(p => p.id === addTargetPlaylist);
+          if (!tp) return null;
+          return (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "rgba(74,158,255,0.12)", border: "1px solid rgba(74,158,255,0.3)", borderRadius: 14, padding: "12px 16px", marginBottom: 20 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(74,158,255,0.8)", fontFamily: bodyFont, marginBottom: 2 }}>{isRTL ? "تضيف إلى" : "Adding to"}</div>
+                <div style={{ fontSize: 14, fontFamily, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tp.name} · {tp.tracks.length} {ui.track}</div>
+              </div>
+              <button onClick={() => { const id = addTargetPlaylist; setAddTargetPlaylist(null); setNav("playlists"); setActivePlaylist(id); }}
+                style={{ flexShrink: 0, background: "linear-gradient(135deg, #4a9eff, #60c4ff)", border: "none", borderRadius: 20, padding: "8px 22px", color: "#050f23", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: bodyFont }}>{isRTL ? "تم" : "Done"}</button>
+            </div>
+          );
+        })()}
 
         {nav === "home" && (
           <div style={{ animation: "fadeUp 0.5s ease both" }}>
@@ -570,8 +769,16 @@ export default function AzaApp() {
                       ) : <div style={{ fontSize: 12, color: section.accent, fontFamily: bodyFont, marginTop: 14 }}>{ui.notifyDone}</div>)}
                     </div>
                     {!isComingSoon && (
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: playingTrack?.id === item.id ? section.accent : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: playingTrack?.id === item.id ? "#050f23" : "rgba(255,255,255,0.4)", marginLeft: 12, flexShrink: 0 }}>
-                        {playingTrack?.id === item.id && isPlaying ? "⏸" : "▶"}
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginLeft: 12, flexShrink: 0 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: playingTrack?.id === item.id ? section.accent : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: playingTrack?.id === item.id ? "#050f23" : "rgba(255,255,255,0.4)" }}>
+                          {playingTrack?.id === item.id && isPlaying ? "⏸" : "▶"}
+                        </div>
+                        {playlists.length > 0 && (
+                          <button onClick={e => { e.stopPropagation(); addTargetPlaylist ? toggleTrackInPlaylist(addTargetPlaylist, item) : setAddingToPlaylist(addingToPlaylist === item.id ? null : item.id); }}
+                            style={{ background: (addTargetPlaylist && isInPlaylist(addTargetPlaylist, item.id)) ? `${section.accent}22` : "rgba(255,255,255,0.06)", border: `1px solid ${(addTargetPlaylist && isInPlaylist(addTargetPlaylist, item.id)) ? `${section.accent}66` : "rgba(255,255,255,0.12)"}`, color: (addTargetPlaylist && isInPlaylist(addTargetPlaylist, item.id)) ? section.accent : "rgba(255,255,255,0.45)", borderRadius: 8, padding: "3px 9px", fontSize: 12, cursor: "pointer" }}>
+                            {(addTargetPlaylist && isInPlaylist(addTargetPlaylist, item.id)) ? "✓" : "+"}
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -607,27 +814,13 @@ export default function AzaApp() {
             {filteredTracks.map(track => (
               <TrackRow key={track.id} track={track} isPlaying={playingTrack?.id === track.id && isPlaying} onPlay={handlePlay} lang={lang}
                 showAdd={playlists.length > 0}
-                onAdd={(t) => playlists.length === 1 ? toggleTrackInPlaylist(playlists[0].id, t) : setAddingToPlaylist(addingToPlaylist === t.id ? null : t.id)}
-                inPlaylist={isInAnyPlaylist(track.id)} />
+                onAdd={(t) => addTargetPlaylist ? toggleTrackInPlaylist(addTargetPlaylist, t) : setAddingToPlaylist(addingToPlaylist === t.id ? null : t.id)}
+                inPlaylist={addTargetPlaylist ? isInPlaylist(addTargetPlaylist, track.id) : false} />
             ))}
             {playlists.length === 0 && <div style={{ textAlign: "center", padding: "20px 0 8px", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: 8 }}>
               <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 12, marginBottom: 10, fontFamily: bodyFont }}>{ui.saveToPlaylist}</div>
               <button onClick={() => setNav("playlists")} style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.35)", borderRadius: 20, padding: "7px 18px", fontSize: 11, cursor: "pointer", fontFamily: bodyFont }}>{ui.createFirst}</button>
             </div>}
-            {addingToPlaylist && (
-              <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "flex-end" }} onClick={() => setAddingToPlaylist(null)}>
-                <div style={{ width: "100%", maxWidth: 480, margin: "0 auto", background: "#0a1f3d", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px 20px 0 0", padding: 24 }} onClick={e => e.stopPropagation()}>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16, fontFamily: bodyFont }}>{ui.addToPlaylist}</div>
-                  {playlists.map(pl => (
-                    <div key={pl.id} onClick={() => { toggleTrackInPlaylist(pl.id, allTracks.find(t => t.id === addingToPlaylist)); setAddingToPlaylist(null); }}
-                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", cursor: "pointer" }}>
-                      <span style={{ fontSize: 15, fontFamily }}>{pl.name}</span>
-                      <span style={{ color: isInPlaylist(pl.id, addingToPlaylist) ? "#4a9eff" : "rgba(255,255,255,0.2)", fontSize: 12, fontFamily: bodyFont }}>{isInPlaylist(pl.id, addingToPlaylist) ? ui.added : ui.add}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
             <Footer {...footerProps} />
           </div>
         )}
@@ -681,9 +874,19 @@ export default function AzaApp() {
                 <button onClick={() => { setActivePlaylist(null); setShuffled(null); }} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 13, fontFamily: bodyFont, marginBottom: 22, padding: 0 }}>{ui.backPlaylists}</button>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
                   <h2 style={{ fontSize: 26, fontFamily, fontWeight: 300 }}>{currentPlaylist.name}</h2>
-                  {currentPlaylist.tracks.length > 1 && (
-                    <button onClick={() => setShuffled(shuffleArr(currentPlaylist.tracks))}
-                      style={{ background: shuffled ? "rgba(74,158,255,0.15)" : "rgba(255,255,255,0.06)", border: `1px solid ${shuffled ? "rgba(74,158,255,0.3)" : "rgba(255,255,255,0.1)"}`, color: shuffled ? "#4a9eff" : "rgba(255,255,255,0.4)", borderRadius: 20, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: bodyFont }}>{ui.shuffle}</button>
+                  {currentPlaylist.tracks.length > 0 && (
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                      <button onClick={() => playPlaylist(shuffled || currentPlaylist.tracks, 0)}
+                        style={{ background: "rgba(74,158,255,0.15)", border: "1px solid rgba(74,158,255,0.35)", color: "#4a9eff", borderRadius: 20, padding: "6px 16px", fontSize: 11, cursor: "pointer", fontFamily: bodyFont, display: "flex", alignItems: "center", gap: 5 }}>▶ {isRTL ? "تشغيل" : "Play"}</button>
+                      <button onClick={() => { setAddTargetPlaylist(currentPlaylist.id); setNav("music"); setActivePlaylist(null); }}
+                        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.55)", borderRadius: 20, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: bodyFont }}>+ {isRTL ? "إضافة" : "Add"}</button>
+                      {currentPlaylist.tracks.length > 1 && (
+                        <button onClick={() => setShuffled(shuffleArr(currentPlaylist.tracks))}
+                          style={{ background: shuffled ? "rgba(74,158,255,0.15)" : "rgba(255,255,255,0.06)", border: `1px solid ${shuffled ? "rgba(74,158,255,0.3)" : "rgba(255,255,255,0.1)"}`, color: shuffled ? "#4a9eff" : "rgba(255,255,255,0.4)", borderRadius: 20, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: bodyFont }}>{ui.shuffle}</button>
+                      )}
+                      <button onClick={() => setLoopPlaylist(v => !v)} title={loopPlaylist ? (isRTL ? "تكرار القائمة: مفعّل" : "Loop playlist: on") : (isRTL ? "تكرار القائمة: متوقف" : "Loop playlist: off")}
+                        style={{ background: loopPlaylist ? "rgba(74,158,255,0.15)" : "rgba(255,255,255,0.06)", border: `1px solid ${loopPlaylist ? "rgba(74,158,255,0.3)" : "rgba(255,255,255,0.1)"}`, color: loopPlaylist ? "#4a9eff" : "rgba(255,255,255,0.4)", borderRadius: 20, padding: "6px 14px", fontSize: 11, cursor: "pointer", fontFamily: bodyFont, display: "flex", alignItems: "center", gap: 5, opacity: loopPlaylist ? 1 : 0.7 }}>🔁 {isRTL ? "تكرار" : "Loop"}</button>
+                    </div>
                   )}
                 </div>
                 <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 13, marginBottom: 24, fontFamily: bodyFont }}>{currentPlaylist.tracks.length} {ui.track}</p>
@@ -691,11 +894,11 @@ export default function AzaApp() {
                   <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(255,255,255,0.2)" }}>
                     <div style={{ fontSize: 14, fontFamily, marginBottom: 8 }}>{ui.emptyPlaylist}</div>
                     <div style={{ fontSize: 12, marginBottom: 20, fontFamily: bodyFont }}>{ui.goToMusic}</div>
-                    <button onClick={() => { setNav("music"); setActivePlaylist(null); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.4)", borderRadius: 20, padding: "8px 20px", fontSize: 12, cursor: "pointer", fontFamily: bodyFont }}>{ui.browseMusic}</button>
+                    <button onClick={() => { setAddTargetPlaylist(currentPlaylist.id); setNav("music"); setActivePlaylist(null); }} style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.4)", borderRadius: 20, padding: "8px 20px", fontSize: 12, cursor: "pointer", fontFamily: bodyFont }}>{ui.browseMusic}</button>
                   </div>
                 ) : (shuffled || currentPlaylist.tracks).map(track => (
-                  <TrackRow key={track.id} track={track} isPlaying={playingTrack?.id === track.id && isPlaying} onPlay={handlePlay} lang={lang}
-                    showAdd onAdd={() => toggleTrackInPlaylist(currentPlaylist.id, track)} inPlaylist={true} />
+                  <TrackRow key={track.id} track={track} isPlaying={playingTrack?.id === track.id && isPlaying}
+                    onPlay={(tk) => { if (playingTrack?.id === tk.id) { setIsPlaying(p => !p); return; } const list = shuffled || currentPlaylist.tracks; playPlaylist(list, list.findIndex(x => x.id === tk.id)); }} lang={lang} />
                 ))}
                 <Footer {...footerProps} />
               </>
@@ -706,14 +909,15 @@ export default function AzaApp() {
 
       {playingTrack && (
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100, background: "rgba(5,15,35,0.97)", backdropFilter: "blur(20px)", borderTop: "1px solid rgba(255,255,255,0.08)", padding: "14px 24px 22px" }}>
-          {/* Real audio element — loops automatically */}
+          {/* Solo music loops forever; meditations and playlists are handled by handleEnded */}
           <audio
             ref={audioRef}
             src={currentAudioUrl || undefined}
-            loop={true}
-            onTimeUpdate={e => { const a = e.currentTarget; if (a.duration) setProgress((a.currentTime / a.duration) * 100); }}
-            onEnded={() => { /* loop handles repeat */ }}
+            loop={loopCurrent}
+            onTimeUpdate={e => { const a = e.currentTarget; setCurrentTime(a.currentTime); if (a.duration) setProgress((a.currentTime / a.duration) * 100); if (typeof navigator !== "undefined" && "mediaSession" in navigator && navigator.mediaSession.setPositionState && a.duration && isFinite(a.duration)) { try { navigator.mediaSession.setPositionState({ duration: a.duration, position: a.currentTime, playbackRate: a.playbackRate || 1 }); } catch (err) {} } }}
+            onEnded={handleEnded}
             onError={() => setIsPlaying(false)}
+            playsInline
           />
           <div style={{ maxWidth: 480, margin: "0 auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
@@ -723,7 +927,14 @@ export default function AzaApp() {
                 {playingTrack.sections && <SectionTags sections={playingTrack.sections} lang={lang} />}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }} title="Looping">🔁</span>
+                <button onClick={() => setSleepSheetOpen(true)} title={isRTL ? "مؤقّت النوم" : "Sleep timer"}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: sleepEndsAt ? "#4a9eff" : "rgba(255,255,255,0.4)", fontSize: 13, padding: 0, display: "flex", alignItems: "center", gap: 3, lineHeight: 1 }}>
+                  🌙{sleepEndsAt ? <span style={{ fontSize: 10, fontFamily: bodyFont }}>{sleepMinsLeft}</span> : null}
+                </button>
+                {isSoloMusic && (
+                  <button onClick={() => setLoopTrack(v => !v)} title={loopTrack ? (isRTL ? "تكرار المقطع: مفعّل" : "Loop track: on") : (isRTL ? "تكرار المقطع: متوقف" : "Loop track: off")}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: loopTrack ? "#4a9eff" : "rgba(255,255,255,0.3)", fontSize: 13, padding: 0, lineHeight: 1, opacity: loopTrack ? 1 : 0.7 }}>🔂</button>
+                )}
                 {playingTrack.hz && <span style={{ color: primaryAccent, fontSize: 10, letterSpacing: 1 }}>{playingTrack.hz}</span>}
                 <button onClick={() => { setPlayingTrack(null); setIsPlaying(false); setProgress(0); }} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 20 }}>×</button>
               </div>
@@ -739,17 +950,57 @@ export default function AzaApp() {
               <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${progress}%`, background: `linear-gradient(90deg, ${primaryAccent}, #60c4ff)`, borderRadius: 2, transition: "width 0.3s" }} />
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>0:00</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                <button style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 15 }}>{"⟨⟨"}</button>
+              <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>{fmtTime(currentTime)}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <button onClick={playPrev} title="Previous" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>⏮</button>
+                <button onClick={() => seek(-10)} title="Back 10 seconds" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1, fontFamily: bodyFont }}>
+                  <span style={{ fontSize: 16 }}>↺</span><span style={{ fontSize: 8, marginTop: 1 }}>10</span>
+                </button>
                 <button onClick={() => setIsPlaying(p => !p)} style={{ width: 46, height: 46, borderRadius: "50%", background: primaryAccent, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: isPlaying ? 13 : 15, color: "#050f23", boxShadow: `0 0 20px ${primaryAccent}44`, transition: "all 0.2s" }}>
                   {isPlaying ? "⏸" : "▶"}
                 </button>
-                <button style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", cursor: "pointer", fontSize: 15 }}>{"⟩⟩"}</button>
+                <button onClick={() => seek(10)} title="Forward 10 seconds" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1, fontFamily: bodyFont }}>
+                  <span style={{ fontSize: 16 }}>↻</span><span style={{ fontSize: 8, marginTop: 1 }}>10</span>
+                </button>
+                <button onClick={playNext} title="Next" style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>⏭</button>
               </div>
               <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>{playingTrack.duration}</span>
             </div>
             {isPlaying && <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}><WaveVisualizer color={primaryAccent} /></div>}
+          </div>
+        </div>
+      )}
+
+      {sleepSheetOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 160, display: "flex", alignItems: "flex-end" }} onClick={() => setSleepSheetOpen(false)}>
+          <div style={{ width: "100%", maxWidth: 480, margin: "0 auto", background: "#0a1f3d", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px 20px 0 0", padding: 24 }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16, fontFamily: bodyFont }}>🌙 {isRTL ? "مؤقّت النوم" : "Sleep timer"}</div>
+            {SLEEP_OPTS.map(opt => {
+              const active = sleepSelMin === opt.min && (opt.min === 0 ? !sleepEndsAt : !!sleepEndsAt);
+              return (
+                <div key={opt.min} onClick={() => setSleepTimer(opt.min)}
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", cursor: "pointer" }}>
+                  <span style={{ fontSize: 15, fontFamily, color: active ? "#4a9eff" : "#fff" }}>{isRTL ? opt.ar : opt.en}</span>
+                  <span style={{ color: active ? "#4a9eff" : "rgba(255,255,255,0.2)", fontSize: 13, fontFamily: bodyFont }}>{active ? "✓" : ""}</span>
+                </div>
+              );
+            })}
+            {sleepEndsAt && <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "rgba(255,255,255,0.35)", fontFamily: bodyFont }}>{isRTL ? `يتوقّف بعد ${sleepMinsLeft} دقيقة` : `Stops in ${sleepMinsLeft} min`}</div>}
+          </div>
+        </div>
+      )}
+
+      {addingToPlaylist && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 150, display: "flex", alignItems: "flex-end" }} onClick={() => setAddingToPlaylist(null)}>
+          <div style={{ width: "100%", maxWidth: 480, margin: "0 auto", background: "#0a1f3d", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px 20px 0 0", padding: 24 }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16, fontFamily: bodyFont }}>{ui.addToPlaylist}</div>
+            {playlists.map(pl => (
+              <div key={pl.id} onClick={() => { toggleTrackInPlaylist(pl.id, findItemById(addingToPlaylist)); setAddingToPlaylist(null); }}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", cursor: "pointer" }}>
+                <span style={{ fontSize: 15, fontFamily }}>{pl.name}</span>
+                <span style={{ color: isInPlaylist(pl.id, addingToPlaylist) ? "#4a9eff" : "rgba(255,255,255,0.2)", fontSize: 12, fontFamily: bodyFont }}>{isInPlaylist(pl.id, addingToPlaylist) ? ui.added : ui.add}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
