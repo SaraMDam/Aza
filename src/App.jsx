@@ -393,13 +393,14 @@ export default function AzaApp() {
   useEffect(() => { document.documentElement.dir = isRTL ? "rtl" : "ltr"; }, [lang]);
 
   // Gently ramp the audio volume to a target; optionally pause when it reaches 0.
-  const FADE_MS = 900;
-  const fadeTo = (target, thenPause) => {
+  const FADE_IN_MS = 500;
+  const FADE_OUT_MS = 220;
+  const fadeTo = (target, ms, thenPause) => {
     const a = audioRef.current;
     if (!a) return;
     if (fadeRef.current) { clearInterval(fadeRef.current); fadeRef.current = null; }
     const start = a.volume;
-    const steps = 30;
+    const steps = Math.max(1, Math.round(ms / 30));
     let i = 0;
     fadeRef.current = setInterval(() => {
       i++;
@@ -410,7 +411,7 @@ export default function AzaApp() {
         a.volume = Math.max(0, Math.min(1, target));
         if (thenPause) a.pause();
       }
-    }, FADE_MS / steps);
+    }, 30);
   };
 
   // Real audio playback control — with gentle fade in / out.
@@ -421,10 +422,10 @@ export default function AzaApp() {
     if (isPlaying) {
       audio.volume = 0;
       const p = audio.play();
-      if (p && p.then) { p.then(() => fadeTo(1)).catch(() => setIsPlaying(false)); }
-      else { fadeTo(1); }
+      if (p && p.then) { p.then(() => fadeTo(1, FADE_IN_MS)).catch(() => setIsPlaying(false)); }
+      else { fadeTo(1, FADE_IN_MS); }
     } else {
-      fadeTo(0, true);
+      fadeTo(0, FADE_OUT_MS, true);
     }
   }, [isPlaying, currentAudioUrl]);
 
